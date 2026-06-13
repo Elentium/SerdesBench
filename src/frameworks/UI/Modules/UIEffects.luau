@@ -56,8 +56,8 @@ function UIEffects.ApplyRotateEffect(UIObject: GuiObject): Tween
 	return Tween
 end
 
-function UIEffects.ApplyFrameOpenEffect(UIObject: GuiObject): Tween
-	const EffectConfig = EffectsConfig.OpenFrameEffect(UIObject)
+function UIEffects.ApplyFrameOpenEffect(UIObject: GuiObject, TargetSize: UDim2): Tween
+	const EffectConfig = EffectsConfig.OpenFrameEffect(TargetSize)
 	const Tween = TweenService:Create(UIObject, EffectConfig.Info, EffectConfig.Goal)
 	Tween:Play()
 	return Tween

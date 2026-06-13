@@ -27,7 +27,7 @@ const FrameVisibilityHandlers: { [boolean]: (Node: Node, Frame: Frame) -> () } =
 	[false] = function(Node: Node, Frame: Frame)
 		Frame.Visible = true
 		Frame.Size = UDim2.fromScale(0, 0)
-		const Tween = UIEffects.ApplyFrameOpenEffect(Frame)
+		const Tween = UIEffects.ApplyFrameOpenEffect(Frame, Node.OriginalSize)
 		Tween.Completed:Once(function()
 			Node.Debounce = false
 		end)

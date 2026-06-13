@@ -79,11 +79,11 @@ function EffectsConfig.RotateEffect(UIObject: GuiObject): Types.EffectConfigRetu
 	}
 end
 
-function EffectsConfig.OpenFrameEffect(UIObject: GuiObject): Types.EffectConfigReturnNode
+function EffectsConfig.OpenFrameEffect(TargetSize: UDim2): Types.EffectConfigReturnNode
 	return {
 		Info = TweenInfos.OpenFrameEffect,
 		Goal = {
-			Size = UIObject.Size,
+			Size = TargetSize,
 		},
 	}
 end
