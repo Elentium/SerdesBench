@@ -1,1 +1,1 @@
-return {} :: { [string]: Frame }
+return {} :: { [string]: GuiObject }

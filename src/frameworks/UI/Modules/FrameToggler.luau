@@ -26,18 +26,18 @@ local GlobalDebounce = false
 ------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
-local function GetOrCreateNode(Frame: Frame, Division: string): Node
-	local ExistingNode = OpenFrames[Frame]
+local function GetOrCreateNode(GuiObject: GuiObject, Division: string): Node
+	local ExistingNode = OpenFrames[GuiObject]
 	if ExistingNode then
 		ExistingNode.Division = Division
 		return ExistingNode
 	end
 
 	local Node: Node = {
-		OriginalSize = Frame.Size,
+		OriginalSize = GuiObject.Size,
 		Division = Division,
 	}
-	OpenFrames[Frame] = Node
+	OpenFrames[GuiObject] = Node
 	return Node
 end
 
@@ -45,61 +45,85 @@ local function ReleaseGlobalDebounce(): ()
 	GlobalDebounce = false
 end
 
-local function ClearDivisionFrame(Division: string, Frame: Frame): ()
-	if OpenDivisions[Division] == Frame then
+local function ClearDivisionFrame(Division: string, GuiObject: GuiObject): ()
+	if OpenDivisions[Division] == GuiObject then
 		OpenDivisions[Division] = nil
 	end
 end
 
-local function AnimateFrameClose(Frame: Frame, Node: Node, OnComplete: () -> ()): ()
-	const Tween = UIEffects.ApplyFrameCloseEffect(Frame)
+local function WhenAllComplete(Count: number, OnComplete: () -> ()): () -> ()
+	local Remaining = Count
+	return function()
+		Remaining -= 1
+		if Remaining <= 0 then
+			OnComplete()
+		end
+	end
+end
+
+local function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+	const Tween = UIEffects.ApplyFrameCloseEffect(GuiObject)
 	Tween.Completed:Once(function()
-		Frame.Visible = false
-		Frame.Size = Node.OriginalSize
-		ClearDivisionFrame(Node.Division, Frame)
+		GuiObject.Visible = false
+		ClearDivisionFrame(Node.Division, GuiObject)
 		OnComplete()
 	end)
 end
 
-local function AnimateFrameOpen(Frame: Frame, Node: Node, OnComplete: () -> ()): ()
-	Frame.Visible = true
-	Frame.Size = UDim2.fromScale(0, 0)
-	const Tween = UIEffects.ApplyFrameOpenEffect(Frame, Node.OriginalSize)
+local function AnimateFrameOpen(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+	GuiObject.Size = UDim2.fromScale(0, 0)
+	GuiObject.Visible = true
+	const Tween = UIEffects.ApplyFrameOpenEffect(GuiObject, Node.OriginalSize)
 	Tween.Completed:Once(function()
-		OpenDivisions[Node.Division] = Frame
+		OpenDivisions[Node.Division] = GuiObject
 		OnComplete()
 	end)
 end
 
-function FrameToggler.ToggleFrame(Frame: Frame, Division: string?): ()
-	if GlobalDebounce then
+function FrameToggler.CloseFrame(GuiObject: GuiObject, Division: string?): ()
+	if GlobalDebounce or not GuiObject.Visible then
 		return
 	end
 
 	const ResolvedDivision = Division or DefaultDivision
-	const Node = GetOrCreateNode(Frame, ResolvedDivision)
+	const Node = GetOrCreateNode(GuiObject, ResolvedDivision)
 
-	if Frame.Visible then
-		GlobalDebounce = true
-		AnimateFrameClose(Frame, Node, ReleaseGlobalDebounce)
+	GlobalDebounce = true
+	AnimateFrameClose(GuiObject, Node, ReleaseGlobalDebounce)
+end
+
+function FrameToggler.OpenFrame(GuiObject: GuiObject, Division: string?): ()
+	if GlobalDebounce or GuiObject.Visible then
 		return
 	end
 
+	const ResolvedDivision = Division or DefaultDivision
+	const Node = GetOrCreateNode(GuiObject, ResolvedDivision)
+
 	const OpenFrameInDivision = OpenDivisions[ResolvedDivision]
-	if OpenFrameInDivision and OpenFrameInDivision ~= Frame then
+	if OpenFrameInDivision and OpenFrameInDivision ~= GuiObject then
 		if OpenFrameInDivision.Visible then
 			GlobalDebounce = true
+			OpenDivisions[ResolvedDivision] = GuiObject
 			const OpenNode = GetOrCreateNode(OpenFrameInDivision, ResolvedDivision)
-			AnimateFrameClose(OpenFrameInDivision, OpenNode, function()
-				AnimateFrameOpen(Frame, Node, ReleaseGlobalDebounce)
-			end)
+			const OnSwitchComplete = WhenAllComplete(2, ReleaseGlobalDebounce)
+			AnimateFrameClose(OpenFrameInDivision, OpenNode, OnSwitchComplete)
+			AnimateFrameOpen(GuiObject, Node, OnSwitchComplete)
 			return
 		end
 		OpenDivisions[ResolvedDivision] = nil
 	end
 
 	GlobalDebounce = true
-	AnimateFrameOpen(Frame, Node, ReleaseGlobalDebounce)
+	AnimateFrameOpen(GuiObject, Node, ReleaseGlobalDebounce)
+end
+
+function FrameToggler.ToggleFrame(GuiObject: GuiObject, Division: string?): ()
+	if GuiObject.Visible then
+		FrameToggler.CloseFrame(GuiObject, Division)
+	else
+		FrameToggler.OpenFrame(GuiObject, Division)
+	end
 end
 
 return FrameToggler

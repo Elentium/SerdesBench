@@ -1,7 +1,9 @@
 ------------------------------------------------------------
 -- MODULES
 ------------------------------------------------------------
+const OpenHitboxes = require("../Data/OpenHitboxes")
 const FrameToggler = require("../Modules/FrameToggler")
+const PlayerGuiFrameResolver = require("../Modules/PlayerGuiFrameResolver")
 const UIEffects = require("../Modules/UIEffects")
 const TagsConfig = {}
 
@@ -39,7 +41,10 @@ function TagsConfig.UI_FrameTogglerButton(UIObject: GuiButton)
 		return
 	end
 
-	const FrameToToggle: Frame = FrameToToggleObj.Value
+	const FrameToToggle = PlayerGuiFrameResolver.ResolveFrame(FrameToToggleObj.Value)
+	if not FrameToToggle then
+		return
+	end
 	UIObject.MouseButton1Click:Connect(function()
 		const Division = UIObject:GetAttribute("Division")
 		FrameToggler.ToggleFrame(
@@ -51,6 +56,25 @@ end
 
 function TagsConfig.UI_RotatingEffect(UIObject: GuiObject)
 	UIEffects.ApplyRotateEffect(UIObject)
+end
+
+function TagsConfig.UI_FrameHitbox(Object: BasePart)
+	const FrameToToggleObj: ObjectValue? = Object:FindFirstChild("FrameToToggle")
+		or Object:FindFirstChild("FrameToOpen")
+	if not FrameToToggleObj or not FrameToToggleObj.Value then
+		return
+	end
+
+	const FrameToToggle = PlayerGuiFrameResolver.ResolveFrame(FrameToToggleObj.Value)
+	if not FrameToToggle then
+		return
+	end
+
+	const Division = Object:GetAttribute("Division")
+	OpenHitboxes[Object] = {
+		GuiObject = FrameToToggle,
+		Division = if typeof(Division) == "string" then Division else "Default",
+	}
 end
 
 return TagsConfig

@@ -8,4 +8,9 @@ export type OpenFrameNode = {
 	Division: string,
 }
 
+export type OpenHitboxNode = {
+	GuiObject: GuiObject,
+	Division: string,
+}
+
 return nil
