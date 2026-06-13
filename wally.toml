@@ -1,7 +1,8 @@
 [package]
-name = "elentium/uipack"
+name = "elentium/MegaStudsUIPack"
 version = "0.1.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
+description = "Client-only UI framework. Must be required from a LocalScript; init errors on the server."
 
 [dependencies]

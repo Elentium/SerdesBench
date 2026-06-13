@@ -1,3 +1,5 @@
+export type TagHandler = (Instance: Instance) -> ()
+
 export type EffectConfigReturnNode = {
 	Info: TweenInfo,
 	Goal: { [string]: any },

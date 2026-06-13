@@ -77,4 +77,4 @@ function TagsConfig.UI_FrameHitbox(Object: BasePart)
 	}
 end
 
-return TagsConfig
+return TagsConfig :: { [string]: (Instance) -> () }

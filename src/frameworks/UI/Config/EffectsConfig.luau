@@ -8,14 +8,15 @@ const EffectsConfig = {}
 ------------------------------------------------------------
 -- TWEEN INFO MAP
 ------------------------------------------------------------
-const TweenInfos = {}
-TweenInfos.HoverEffect = TweenInfo.new(0.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-TweenInfos.HoverOutEffect = TweenInfo.new(0.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-TweenInfos.ClickEffect = TweenInfo.new(0.15, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-TweenInfos.ClickOutEffect = TweenInfo.new(0.15, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-TweenInfos.RotateEffect = TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1)
-TweenInfos.OpenFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-TweenInfos.CloseFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+const TweenInfos = {
+	HoverEffect = TweenInfo.new(0.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	HoverOutEffect = TweenInfo.new(0.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	ClickEffect = TweenInfo.new(0.15, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	ClickOutEffect = TweenInfo.new(0.15, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	RotateEffect = TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1),
+	OpenFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	CloseFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+}
 
 ------------------------------------------------------------
 -- EFFECTS MAP ([EffectName]: function(Instance) -> EffectConfigReturnNode)
@@ -37,10 +38,11 @@ function EffectsConfig.HoverEffect(UIObject: GuiObject): Types.EffectConfigRetur
 end
 
 function EffectsConfig.HoverOutEffect(UIObject: GuiObject): Types.EffectConfigReturnNode
+	const CachedSize = OriginalSizes[UIObject]
 	return {
 		Info = TweenInfos.HoverOutEffect,
 		Goal = {
-			Size = OriginalSizes[UIObject],
+			Size = if CachedSize then CachedSize else UIObject.Size,
 		},
 	}
 end
@@ -62,10 +64,11 @@ function EffectsConfig.ClickEffect(UIObject: GuiObject): Types.EffectConfigRetur
 end
 
 function EffectsConfig.ClickOutEffect(UIObject: GuiObject): Types.EffectConfigReturnNode
+	const CachedSize = OriginalSizes[UIObject]
 	return {
 		Info = TweenInfos.ClickOutEffect,
 		Goal = {
-			Size = OriginalSizes[UIObject],
+			Size = if CachedSize then CachedSize else UIObject.Size,
 		},
 	}
 end
@@ -88,7 +91,7 @@ function EffectsConfig.OpenFrameEffect(TargetSize: UDim2): Types.EffectConfigRet
 	}
 end
 
-function EffectsConfig.CloseFrameEffect(UIObject: GuiObject): Types.EffectConfigReturnNode
+function EffectsConfig.CloseFrameEffect(_UIObject: GuiObject): Types.EffectConfigReturnNode
 	return {
 		Info = TweenInfos.CloseFrameEffect,
 		Goal = {
