@@ -22,7 +22,8 @@
 	├── Data/                              Runtime state (do not edit at rest)
 	│   ├── OriginalSizes.luau             Cached original Size per GuiObject
 	│   ├── HoverTweens.luau               Active hover tweens (click-out reuse)
-	│   └── OpenFrames.luau                Per-frame toggle state
+	│   ├── OpenFrames.luau                Per-frame toggle state
+	│   └── OpenDivisions.luau             Currently open Frame per division
 	└── Initializers/
 	    ├── UITagInitializer.luau          Scans PlayerGui and binds tag handlers
 	    └── FrameworkInitializer.client.luau  Client bootstrap (require parent)
@@ -51,11 +52,21 @@
 		Instance type: GuiObject
 
 	UI_FrameTogglerButton
-		Opens/closes a target Frame on click.
+		Opens/closes a target Frame on click. Only one Frame per division may be open;
+		opening another Frame in the same division closes the current one first.
 		Instance type: GuiButton
 		Setup:
-			- Add an ObjectValue child named `FrameToOpen`
+			- Add an ObjectValue child named `FrameToToggle`
 			- Set its Value to the Frame you want to toggle
+			- Optional: set a `Division` attribute (string) on the button
+		Divisions:
+			- Omit `Division` or leave it unset → uses `"Default"`
+			- Buttons in the same division share one open slot (e.g. button1 + button2)
+			- A custom division is independent (e.g. `"Shop"` only conflicts with other `"Shop"` buttons)
+		Example:
+			button1, button2 → Division `"Default"` → opening frame2 closes frame1
+			button3, button4 → Division `"Shop"` → unaffected by `"Default"` frames
+		Global debounce: while any open/close tween is playing, further toggle clicks are ignored.
 		The Frame should start Visible = false (or true); toggling animates Size
 		between scale (0, 0) and its layout size.
 
@@ -76,7 +87,7 @@
 	| ClickEffect       | Scale to 0.9× original                        |
 	| ClickOutEffect    | Restore size; reuses active hover tween if any|
 	| RotateEffect      | Linear infinite rotation (+360°)              |
-	| OpenFrameEffect   | Tween Size to current layout size             |
+	| OpenFrameEffect   | Tween Size to target layout size              |
 	| CloseFrameEffect  | Tween Size to UDim2.fromScale(0, 0)           |
 
 	Tween timings and easing live in EffectsConfig (`TweenInfos` table). Adjust
@@ -152,9 +163,11 @@
 	Require FrameToggler directly or expose a thin wrapper:
 
 		local FrameToggler = require(path.to.Modules.FrameToggler)
-		FrameToggler.ToggleFrame(myFrame)
+		FrameToggler.ToggleFrame(myFrame)              -- Default division
+		FrameToggler.ToggleFrame(myFrame, "Shop")      -- custom division
 
-	First call caches OriginalSize and manages debounce so rapid clicks do not overlap tweens.
+	First call caches OriginalSize. A global debounce blocks overlapping tweens.
+	Only one Frame per division stays open; opening another closes the current one first.
 
 
 	Runtime data (Data/)
@@ -162,9 +175,10 @@
 
 	These modules are empty tables at load time; the framework fills them at runtime.
 
-	OriginalSizes  — first-seen Size per GuiObject for scale effects
-	HoverTweens    — active hover tween per object (click-out can replay it)
-	OpenFrames     — { OriginalSize, Debounce } per toggled Frame
+	OriginalSizes   — first-seen Size per GuiObject for scale effects
+	HoverTweens     — active hover tween per object (click-out can replay it)
+	OpenFrames      — { OriginalSize, Division } per toggled Frame
+	OpenDivisions   — division name → currently open Frame (or unset)
 
 	Do not pre-populate these files. Clear state is handled in memory only.
 
@@ -176,7 +190,7 @@
 		{ Info: TweenInfo, Goal: { [string]: any } }
 
 	OpenFrameNode
-		{ OriginalSize: UDim2, Debounce: boolean }
+		{ OriginalSize: UDim2, Division: string }
 
 
 	Notes and limitations
@@ -187,7 +201,8 @@
 	  are cached but tween goals use scale math.
 	- Tag handlers run once per instance when tagged; avoid duplicate connections if
 	  you retag at runtime without cloning.
-	- UI_FrameTogglerButton silently no-ops if `FrameToOpen` ObjectValue is missing or empty.
+	- UI_FrameTogglerButton silently no-ops if `FrameToToggle` ObjectValue is missing or empty.
+	- `Division` attribute must be a string when set; non-string values fall back to `"Default"`.
 
 
 	Checklist: new interactive UI element
@@ -195,7 +210,8 @@
 
 	[ ] Create/configure GuiObject in PlayerGui
 	[ ] Add CollectionService tag(s) from TagsConfig
-	[ ] For frame toggles: add FrameToOpen ObjectValue → target Frame
+	[ ] For frame toggles: add FrameToToggle ObjectValue → target Frame
+	[ ] Set `Division` attribute when multiple toggle groups should stay independent
 	[ ] Play-test hover, click, and frame animations
 	[ ] Tune EffectConfig if the motion feels wrong
 ]]

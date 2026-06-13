@@ -34,14 +34,18 @@ function TagsConfig.UI_HoverEffect(UIObject: GuiObject)
 end
 
 function TagsConfig.UI_FrameTogglerButton(UIObject: GuiButton)
-	const FrameToOpenObj: ObjectValue? = UIObject:FindFirstChild("FrameToOpen")
-	if not FrameToOpenObj or not FrameToOpenObj.Value then
+	const FrameToToggleObj: ObjectValue? = UIObject:FindFirstChild("FrameToToggle")
+	if not FrameToToggleObj or not FrameToToggleObj.Value then
 		return
 	end
 
-	const FrameToOpen: Frame = FrameToOpenObj.Value
+	const FrameToToggle: Frame = FrameToToggleObj.Value
 	UIObject.MouseButton1Click:Connect(function()
-		FrameToggler.ToggleFrame(FrameToOpen)
+		const Division = UIObject:GetAttribute("Division")
+		FrameToggler.ToggleFrame(
+			FrameToToggle,
+			if typeof(Division) == "string" then Division else nil
+		)
 	end)
 end
 

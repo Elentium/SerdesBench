@@ -5,7 +5,7 @@ export type EffectConfigReturnNode = {
 
 export type OpenFrameNode = {
 	OriginalSize: UDim2,
-	Debounce: boolean,
+	Division: string,
 }
 
 return nil
