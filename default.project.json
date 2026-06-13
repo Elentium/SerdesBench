@@ -1,0 +1,13 @@
+{
+  "name": "UIPack",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Frameworks": {
+        "$path": "src/frameworks"
+      }
+    }
+  }
+}

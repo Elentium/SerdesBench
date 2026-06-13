@@ -1,0 +1,1 @@
+return {} :: { [GuiObject]: Tween }
