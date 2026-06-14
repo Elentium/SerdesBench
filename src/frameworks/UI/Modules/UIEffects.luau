@@ -1,6 +1,7 @@
 ------------------------------------------------------------
 -- SERVICES
 ------------------------------------------------------------
+const SoundService = game:GetService("SoundService")
 const TweenService = game:GetService("TweenService")
 
 ------------------------------------------------------------
@@ -8,6 +9,7 @@ const TweenService = game:GetService("TweenService")
 ------------------------------------------------------------
 const AncestorOpenTweens = require("../Data/AncestorOpenTweens")
 const EffectsConfig = require("../Config/EffectsConfig")
+const EffectsSoundConfig = require("../Config/EffectsSoundConfig")
 const BobbingConnections = require("../Data/BobbingConnections")
 const HoverTweens = require("../Data/HoverTweens")
 const OriginalBobbingStates = require("../Data/OriginalBobbingStates")
@@ -16,7 +18,38 @@ const UIEffects = {}
 ------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
+local function PlayEffectSound(SoundId: string?): ()
+	if SoundId == nil or SoundId == "rbxassetid://0" then
+		return
+	end
+
+	const Sound = Instance.new("Sound")
+	Sound.SoundId = SoundId
+	Sound.Parent = SoundService
+	Sound:Play()
+	Sound.Ended:Once(function()
+		Sound:Destroy()
+	end)
+end
+
+local function GetHoverSoundId(UIObject: GuiObject): string?
+	const SoundId = UIObject:GetAttribute("HoverSoundId")
+	if typeof(SoundId) == "string" then
+		return SoundId
+	end
+	return EffectsSoundConfig.Hover
+end
+
+local function GetClickSoundId(UIObject: GuiObject): string?
+	const SoundId = UIObject:GetAttribute("ClickSoundId")
+	if typeof(SoundId) == "string" then
+		return SoundId
+	end
+	return EffectsSoundConfig.Click
+end
+
 function UIEffects.ApplyHoverEffect(UIObject: GuiObject): Tween
+	PlayEffectSound(GetHoverSoundId(UIObject))
 	const EffectConfig = EffectsConfig.HoverEffect(UIObject)
 	const Tween = TweenService:Create(UIObject, EffectConfig.Info, EffectConfig.Goal)
 	Tween:Play()
@@ -33,6 +66,7 @@ function UIEffects.ApplyHoverOutEffect(UIObject: GuiObject): Tween
 end
 
 function UIEffects.ApplyClickEffect(UIObject: GuiObject): Tween
+	PlayEffectSound(GetClickSoundId(UIObject))
 	const EffectConfig = EffectsConfig.ClickEffect(UIObject)
 	const Tween = TweenService:Create(UIObject, EffectConfig.Info, EffectConfig.Goal)
 	Tween:Play()

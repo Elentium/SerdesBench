@@ -79,6 +79,7 @@ Frameworks/UI/
 ├── Config/
 │   ├── TagsConfig.luau                Tag name → handler(Instance)
 │   ├── EffectsConfig.luau             Effect name → TweenInfo + goal properties
+│   ├── EffectsSoundConfig.luau        Hover and click sound asset IDs
 │   └── OpenHitboxConfig.luau          Proximity query interval and box size
 ├── Modules/
 │   ├── UIEffects.luau                 Applies tweens from EffectsConfig
@@ -228,6 +229,11 @@ Defined in EffectsConfig; applied by UIEffects.
 | OpenEffectOnAncestorOpenEffect    | Quint open tween (0.25s) to target Size       |
 | BobbingEffect                     | Chained TweenService segments on Position and Rotation |
 
+Hover and click sounds play from Config/EffectsSoundConfig.luau when ApplyHoverEffect
+and ApplyClickEffect run. Per-instance `HoverSoundId` / `ClickSoundId` attributes
+(string) override the config. Set an ID to rbxassetid:// URL, or nil /
+rbxassetid://0 to disable.
+
 Tween timings and easing live in EffectsConfig (`TweenInfos` table). Adjust
 duration, EasingStyle, and EasingDirection there.
 
@@ -287,6 +293,9 @@ Change tween feel
 
 Change hover/click scale
 	Edit `ScaleFactor` in EffectsConfig.HoverEffect / ClickEffect.
+
+Change hover/click sounds
+	Edit Hover / Click in Config/EffectsSoundConfig.luau.
 
 Change frame open/close speed
 	Edit TweenInfos.OpenFrameEffect / CloseFrameEffect in EffectsConfig.
