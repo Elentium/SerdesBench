@@ -1,7 +1,6 @@
 ------------------------------------------------------------
 -- SERVICES
 ------------------------------------------------------------
-const CollectionService = game:GetService("CollectionService")
 const RunService = game:GetService("RunService")
 
 ------------------------------------------------------------
@@ -37,15 +36,19 @@ local function CacheOriginalSize(GuiObject: GuiObject): UDim2
 	return OriginalSizes[GuiObject]
 end
 
-local function CompareByAbsolutePosition(Left: GuiObject, Right: GuiObject): boolean
-	local LeftPosition = Left.AbsolutePosition
-	local RightPosition = Right.AbsolutePosition
-
-	if LeftPosition.Y ~= RightPosition.Y then
-		return LeftPosition.Y < RightPosition.Y
+local function CompareBySnapshot(
+	Left: { AbsolutePosition: Vector2, Order: number },
+	Right: { AbsolutePosition: Vector2, Order: number }
+): boolean
+	if Left.AbsolutePosition.Y ~= Right.AbsolutePosition.Y then
+		return Left.AbsolutePosition.Y < Right.AbsolutePosition.Y
 	end
 
-	return LeftPosition.X < RightPosition.X
+	if Left.AbsolutePosition.X ~= Right.AbsolutePosition.X then
+		return Left.AbsolutePosition.X < Right.AbsolutePosition.X
+	end
+
+	return Left.Order < Right.Order
 end
 
 local function GetPriority(GuiObject: GuiObject): number?
@@ -56,24 +59,41 @@ local function GetPriority(GuiObject: GuiObject): number?
 	return nil
 end
 
-local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
-	local TaggedDescendants: { GuiObject } = {}
+local function GetTaggedDescendantSnapshots(Frame: GuiObject): { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } }
+	local Snapshots: { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } } = {}
+	local Order = 0
 
-	for _, Instance: Instance in CollectionService:GetTagged(TagName) do
-		if Instance:IsA("GuiObject") and Instance:IsDescendantOf(Frame) then
-			table.insert(TaggedDescendants, Instance)
+	for _, Instance: Instance in Frame:QueryDescendants(`.{TagName}`) do
+		if Instance:IsA("GuiObject") then
+			Order += 1
+			table.insert(Snapshots, {
+				Object = Instance,
+				AbsolutePosition = Instance.AbsolutePosition,
+				Order = Order,
+			})
 		end
 	end
 
-	local WithPriority: { { Object: GuiObject, Priority: number } } = {}
-	local WithoutPriority: { GuiObject } = {}
+	return Snapshots
+end
 
-	for _, Descendant: GuiObject in TaggedDescendants do
-		const Priority = GetPriority(Descendant)
+local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
+	const Snapshots = GetTaggedDescendantSnapshots(Frame)
+
+	local WithPriority: { { Object: GuiObject, Priority: number, AbsolutePosition: Vector2, Order: number } } = {}
+	local WithoutPriority: { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } } = {}
+
+	for _, Snapshot in Snapshots do
+		const Priority = GetPriority(Snapshot.Object)
 		if Priority then
-			table.insert(WithPriority, { Object = Descendant, Priority = Priority })
+			table.insert(WithPriority, {
+				Object = Snapshot.Object,
+				Priority = Priority,
+				AbsolutePosition = Snapshot.AbsolutePosition,
+				Order = Snapshot.Order,
+			})
 		else
-			table.insert(WithoutPriority, Descendant)
+			table.insert(WithoutPriority, Snapshot)
 		end
 	end
 
@@ -81,10 +101,10 @@ local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
 		if Left.Priority ~= Right.Priority then
 			return Left.Priority < Right.Priority
 		end
-		return CompareByAbsolutePosition(Left.Object, Right.Object)
+		return CompareBySnapshot(Left, Right)
 	end)
 
-	table.sort(WithoutPriority, CompareByAbsolutePosition)
+	table.sort(WithoutPriority, CompareBySnapshot)
 
 	local TotalCount = #WithPriority + #WithoutPriority
 	local SortedDescendants: { GuiObject } = {}
@@ -104,7 +124,7 @@ local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
 		end
 
 		if not Placed and WithoutPriorityIndex <= #WithoutPriority then
-			const Descendant = WithoutPriority[WithoutPriorityIndex]
+			const Descendant = WithoutPriority[WithoutPriorityIndex].Object
 			table.insert(SortedDescendants, Descendant)
 			Used[Descendant] = true
 			WithoutPriorityIndex += 1
@@ -118,7 +138,7 @@ local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
 	end
 
 	while WithoutPriorityIndex <= #WithoutPriority do
-		table.insert(SortedDescendants, WithoutPriority[WithoutPriorityIndex])
+		table.insert(SortedDescendants, WithoutPriority[WithoutPriorityIndex].Object)
 		WithoutPriorityIndex += 1
 	end
 
