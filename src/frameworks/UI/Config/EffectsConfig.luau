@@ -16,7 +16,18 @@ const TweenInfos = {
 	RotateEffect = TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1),
 	OpenFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
 	CloseFrameEffect = TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+	OpenEffectOnAncestorOpenEffect = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 }
+
+EffectsConfig.Bobbing = {
+	Period = 4,
+	OffsetY = 6,
+	RotationAmplitude = 10,
+}
+
+function EffectsConfig.BobbingSegmentInfo(): TweenInfo
+	return TweenInfo.new(EffectsConfig.Bobbing.Period / 4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+end
 
 ------------------------------------------------------------
 -- EFFECTS MAP ([EffectName]: function(Instance) -> EffectConfigReturnNode)
@@ -96,6 +107,15 @@ function EffectsConfig.CloseFrameEffect(_UIObject: GuiObject): Types.EffectConfi
 		Info = TweenInfos.CloseFrameEffect,
 		Goal = {
 			Size = UDim2.fromScale(0, 0),
+		},
+	}
+end
+
+function EffectsConfig.OpenEffectOnAncestorOpenEffect(TargetSize: UDim2): Types.EffectConfigReturnNode
+	return {
+		Info = TweenInfos.OpenEffectOnAncestorOpenEffect,
+		Goal = {
+			Size = TargetSize,
 		},
 	}
 end

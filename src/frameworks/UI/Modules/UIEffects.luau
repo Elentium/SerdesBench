@@ -6,8 +6,11 @@ const TweenService = game:GetService("TweenService")
 ------------------------------------------------------------
 -- MODULES
 ------------------------------------------------------------
+const AncestorOpenTweens = require("../Data/AncestorOpenTweens")
 const EffectsConfig = require("../Config/EffectsConfig")
+const BobbingConnections = require("../Data/BobbingConnections")
 const HoverTweens = require("../Data/HoverTweens")
+const OriginalBobbingStates = require("../Data/OriginalBobbingStates")
 const UIEffects = {}
 
 ------------------------------------------------------------
@@ -67,6 +70,130 @@ function UIEffects.ApplyFrameCloseEffect(UIObject: GuiObject): Tween
 	const Tween = TweenService:Create(UIObject, EffectConfig.Info, EffectConfig.Goal)
 	Tween:Play()
 	return Tween
+end
+
+function UIEffects.ApplyOpenEffectOnAncestorOpen(UIObject: GuiObject, TargetSize: UDim2): Tween
+	const ExistingTween = AncestorOpenTweens[UIObject]
+	if ExistingTween then
+		ExistingTween:Cancel()
+	end
+
+	const EffectConfig = EffectsConfig.OpenEffectOnAncestorOpenEffect(TargetSize)
+	const Tween = TweenService:Create(UIObject, EffectConfig.Info, EffectConfig.Goal)
+	AncestorOpenTweens[UIObject] = Tween
+	Tween:Play()
+
+	Tween.Completed:Once(function()
+		if AncestorOpenTweens[UIObject] == Tween then
+			AncestorOpenTweens[UIObject] = nil
+		end
+	end)
+
+	return Tween
+end
+
+function UIEffects.CancelOpenEffectOnAncestorOpen(UIObject: GuiObject): ()
+	const ActiveTween = AncestorOpenTweens[UIObject]
+	if ActiveTween then
+		ActiveTween:Cancel()
+		AncestorOpenTweens[UIObject] = nil
+	end
+end
+
+local function GetBobbingUpPosition(OriginalPosition: UDim2, OffsetY: number): UDim2
+	return UDim2.new(
+		OriginalPosition.X.Scale,
+		OriginalPosition.X.Offset,
+		OriginalPosition.Y.Scale,
+		OriginalPosition.Y.Offset - OffsetY
+	)
+end
+
+function UIEffects.ApplyBobbingEffect(UIObject: GuiObject): ()
+	if BobbingConnections[UIObject] then
+		return
+	end
+
+	if not OriginalBobbingStates[UIObject] then
+		OriginalBobbingStates[UIObject] = {
+			Position = UIObject.Position,
+			Rotation = UIObject.Rotation,
+		}
+	end
+
+	const BobbingConfig = EffectsConfig.Bobbing
+	const OriginalState = OriginalBobbingStates[UIObject]
+	const UpPosition = GetBobbingUpPosition(OriginalState.Position, BobbingConfig.OffsetY)
+	const SegmentInfo = EffectsConfig.BobbingSegmentInfo()
+	local ActiveTween: Tween? = nil
+	local Cancelled = false
+
+	local function StopBobbing(): ()
+		if Cancelled then
+			return
+		end
+
+		Cancelled = true
+
+		if ActiveTween then
+			ActiveTween:Cancel()
+			ActiveTween = nil
+		end
+
+		UIObject.Position = OriginalState.Position
+		UIObject.Rotation = OriginalState.Rotation
+		BobbingConnections[UIObject] = nil
+	end
+
+	local function PlaySegment(GoalPosition: UDim2, GoalRotation: number, OnComplete: () -> ()): ()
+		if Cancelled then
+			return
+		end
+
+		const Tween = TweenService:Create(UIObject, SegmentInfo, {
+			Position = GoalPosition,
+			Rotation = GoalRotation,
+		})
+		ActiveTween = Tween
+		Tween:Play()
+
+		Tween.Completed:Once(function(PlaybackState: Enum.PlaybackState)
+			if Cancelled or PlaybackState ~= Enum.PlaybackState.Completed then
+				if ActiveTween == Tween then
+					ActiveTween = nil
+				end
+				return
+			end
+
+			OnComplete()
+
+			if ActiveTween == Tween then
+				ActiveTween = nil
+			end
+		end)
+	end
+
+	local function RunCycle(): ()
+		if Cancelled then
+			return
+		end
+
+		PlaySegment(UpPosition, OriginalState.Rotation + BobbingConfig.RotationAmplitude, function()
+			PlaySegment(OriginalState.Position, OriginalState.Rotation, function()
+				PlaySegment(UpPosition, OriginalState.Rotation - BobbingConfig.RotationAmplitude, function()
+					PlaySegment(OriginalState.Position, OriginalState.Rotation, RunCycle)
+				end)
+			end)
+		end)
+	end
+
+	BobbingConnections[UIObject] = {
+		Cancel = StopBobbing,
+	}
+
+	RunCycle()
+
+	UIObject.Destroying:Once(StopBobbing)
 end
 
 return UIEffects

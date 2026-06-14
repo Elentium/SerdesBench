@@ -1,6 +1,7 @@
 ------------------------------------------------------------
 -- MODULES
 ------------------------------------------------------------
+const AncestorOpenEffects = require("./AncestorOpenEffects")
 const OpenDivisions = require("../Data/OpenDivisions")
 const OpenFrames = require("../Data/OpenFrames")
 const Types = require("../Types")
@@ -61,6 +62,8 @@ local function WhenAllComplete(Count: number, OnComplete: () -> ()): () -> ()
 end
 
 local function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+	AncestorOpenEffects.ResetForFrameClose(GuiObject)
+
 	const Tween = UIEffects.ApplyFrameCloseEffect(GuiObject)
 	Tween.Completed:Once(function()
 		GuiObject.Visible = false
@@ -70,9 +73,15 @@ local function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: (
 end
 
 local function AnimateFrameOpen(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+	GuiObject.Size = Node.OriginalSize
+	const TaggedDescendants = AncestorOpenEffects.PrepareForFrameOpen(GuiObject)
+
 	GuiObject.Size = UDim2.fromScale(0, 0)
 	GuiObject.Visible = true
 	const Tween = UIEffects.ApplyFrameOpenEffect(GuiObject, Node.OriginalSize)
+	const DescendantStartDelay = AncestorOpenEffects.GetFrameOpenHalfDelay(Node.OriginalSize)
+	AncestorOpenEffects.PlayStaggered(GuiObject, TaggedDescendants, DescendantStartDelay)
+
 	Tween.Completed:Once(function()
 		OpenDivisions[Node.Division] = GuiObject
 		OnComplete()

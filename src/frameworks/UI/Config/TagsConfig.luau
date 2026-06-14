@@ -58,6 +58,13 @@ function TagsConfig.UI_RotatingEffect(UIObject: GuiObject)
 	UIEffects.ApplyRotateEffect(UIObject)
 end
 
+function TagsConfig.UI_BobbingEffect(UIObject: GuiObject)
+	UIEffects.ApplyBobbingEffect(UIObject)
+end
+
+function TagsConfig.UI_OpenEffectOnAncestorOpen(_UIObject: GuiObject): ()
+end
+
 function TagsConfig.UI_FrameHitbox(Object: BasePart)
 	const FrameToToggleObj: ObjectValue? = Object:FindFirstChild("FrameToToggle")
 		or Object:FindFirstChild("FrameToOpen")

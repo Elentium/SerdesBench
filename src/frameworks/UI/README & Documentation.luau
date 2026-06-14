@@ -83,9 +83,13 @@ Frameworks/UI/
 ├── Modules/
 │   ├── UIEffects.luau                 Applies tweens from EffectsConfig
 │   ├── FrameToggler.luau              Open/close GuiObject animations + debounce
+│   ├── AncestorOpenEffects.luau     Staggered open effects for tagged descendants
 │   └── PlayerGuiFrameResolver.luau  Maps StarterGui refs to PlayerGui clones
 ├── Data/                              Runtime state (do not edit at rest)
 │   ├── OriginalSizes.luau             Cached original Size per GuiObject
+│   ├── OriginalBobbingStates.luau     Cached Position + Rotation for bobbing
+│   ├── BobbingConnections.luau          Active bobbing tween runner per GuiObject
+│   ├── AncestorOpenTweens.luau          Active ancestor-open tweens per GuiObject
 │   ├── HoverTweens.luau               Active hover tweens (click-out reuse)
 │   ├── OpenFrames.luau                Per-GuiObject toggle state
 │   ├── OpenDivisions.luau             Currently open GuiObject per division
@@ -182,6 +186,30 @@ UI_RotatingEffect
 	Continuous 360° rotation loop.
 	Instance type: GuiObject
 
+UI_BobbingEffect
+	Continuous bobbing via chained TweenService segments (Linear, next segment starts on Completed):
+		1. rises and rotates right
+		2. falls to rest with neutral rotation
+		3. rises and rotates left
+		4. falls to rest, then repeats
+	Instance type: GuiObject
+
+UI_OpenEffectOnAncestorOpen
+	Marks a GuiObject to play a staggered open animation when an ancestor frame opens
+	via FrameToggler. Place on descendants inside a toggled frame; no extra setup.
+	Instance type: GuiObject
+	Behavior when the parent frame opens:
+		- Collapsed to Size (0, 0) when the frame begins opening; playback starts
+		  halfway through the ancestor frame open tween, then staggers from there
+		- Sorted by AbsolutePosition (top-to-bottom, then left-to-right)
+		- Optional `Priority` attribute (number): plays at that slot (1 = first),
+		  bypassing position sort for that element; unprioritized items fill remaining slots
+		- Each plays OpenEffectOnAncestorOpenEffect with a frame stagger between starts
+		- Does not affect FrameToggler global debounce or division logic
+		- On frame close: pending playback is cancelled, active tweens are stopped,
+		  and each descendant's Size is restored to its cached layout size
+	Tag handler is a no-op marker; animation is driven by FrameToggler.OpenFrame.
+
 
 Built-in effects
 ----------------
@@ -194,9 +222,11 @@ Defined in EffectsConfig; applied by UIEffects.
 | HoverOutEffect    | Restore cached original Size                  |
 | ClickEffect       | Scale to 0.9× original                        |
 | ClickOutEffect    | Restore size; reuses active hover tween if any|
-| RotateEffect      | Linear infinite rotation (+360°)              |
-| OpenFrameEffect   | Tween Size to target layout size              |
-| CloseFrameEffect  | Tween Size to UDim2.fromScale(0, 0)           |
+| RotateEffect                      | Linear infinite rotation (+360°)              |
+| OpenFrameEffect                   | Tween Size to target layout size              |
+| CloseFrameEffect                  | Tween Size to UDim2.fromScale(0, 0)           |
+| OpenEffectOnAncestorOpenEffect    | Quint open tween (0.25s) to target Size       |
+| BobbingEffect                     | Chained TweenService segments on Position and Rotation |
 
 Tween timings and easing live in EffectsConfig (`TweenInfos` table). Adjust
 duration, EasingStyle, and EasingDirection there.
@@ -205,7 +235,8 @@ duration, EasingStyle, and EasingDirection there.
 Programmatic API
 ----------------
 
-UI.Effects       — UIEffects (ApplyHoverEffect, ApplyClickEffect, etc.)
+UI.Effects       — UIEffects (ApplyHoverEffect, ApplyClickEffect,
+                     ApplyOpenEffectOnAncestorOpen, ApplyBobbingEffect, etc.)
 UI.Tags          — TagsConfig tag handlers
 UI.FrameToggler  — OpenFrame, CloseFrame, ToggleFrame
 
@@ -234,9 +265,12 @@ OpenFrame(GuiObject, Division?)
 	- No-op if global debounce is active or GuiObject.Visible is true
 	- Closes any other visible GuiObject in the same division, then opens target
 	- Division switch: close and open animations run in parallel
+	- Descendants tagged UI_OpenEffectOnAncestorOpen play staggered open effects
+	  starting halfway through the frame open tween (independent of global debounce)
 
 CloseFrame(GuiObject, Division?)
 	- No-op if global debounce is active or GuiObject.Visible is false
+	- Resets UI_OpenEffectOnAncestorOpen descendants before the close tween plays
 	- Plays close animation and clears division tracking
 
 ToggleFrame(GuiObject, Division?)
@@ -256,6 +290,15 @@ Change hover/click scale
 
 Change frame open/close speed
 	Edit TweenInfos.OpenFrameEffect / CloseFrameEffect in EffectsConfig.
+
+Change ancestor-open child effect timing or easing
+	Edit TweenInfos.OpenEffectOnAncestorOpenEffect in EffectsConfig (duration 0.25s,
+	Quint). Stagger between children is frame-based (StaggerFrames in
+	Modules/AncestorOpenEffects.luau, default 2 heartbeat frames).
+
+Change bobbing intensity or speed
+	Edit EffectsConfig.Bobbing (Period, OffsetY, RotationAmplitude) and
+	EffectsConfig.BobbingSegmentInfo easing/duration.
 
 Change hitbox query rate or detection box
 	Edit QueryIntermission / QuerySize in Config/OpenHitboxConfig.luau.
@@ -308,8 +351,11 @@ Runtime data (Data/)
 
 These modules are empty tables at load time; the framework fills them at runtime.
 
-OriginalSizes   — first-seen Size per GuiObject for scale effects
-HoverTweens     — active hover tween per object (click-out can replay it)
+OriginalSizes         — first-seen Size per GuiObject for scale effects
+OriginalBobbingStates — cached Position + Rotation per bobbing GuiObject
+BobbingConnections  — active bobbing tween runner per GuiObject
+AncestorOpenTweens  — active open-on-ancestor tween per GuiObject
+HoverTweens           — active hover tween per object (click-out can replay it)
 OpenFrames      — { OriginalSize, Division } per toggled GuiObject
 OpenDivisions   — division name → currently open GuiObject (or unset)
 OpenHitboxes    — hitbox Part → { GuiObject, Division }
@@ -355,6 +401,8 @@ Checklist: new interactive UI element
 [ ] Create/configure GuiObject in StarterGui or PlayerGui
 [ ] Add CollectionService tag(s) from TagsConfig
 [ ] For frame toggles: add FrameToToggle ObjectValue → target GuiObject
+[ ] Tag child elements with UI_OpenEffectOnAncestorOpen for staggered reveal on open
+[ ] Set `Priority` attribute (number) on children that must open in a specific order
 [ ] Set `Division` attribute when multiple toggle groups should stay independent
 [ ] For proximity frames: tag a BasePart with UI_FrameHitbox and link FrameToToggle
 [ ] Tune OpenHitboxConfig query size/interval if detection feels off
