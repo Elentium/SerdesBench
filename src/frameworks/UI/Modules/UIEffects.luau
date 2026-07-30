@@ -16,23 +16,31 @@ const OriginalBobbingStates = require("../Data/OriginalBobbingStates")
 const UIEffects = {}
 
 ------------------------------------------------------------
+-- VARIABLES
+------------------------------------------------------------
+const CachedSounds: { [string]: Sound } = {}
+
+------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
-local function PlayEffectSound(SoundId: string?): ()
+const function PlayEffectSound(SoundId: string?): ()
 	if SoundId == nil or SoundId == "rbxassetid://0" then
 		return
 	end
 
-	const Sound = Instance.new("Sound")
-	Sound.SoundId = SoundId
-	Sound.Parent = SoundService
+	if not CachedSounds[SoundId] then
+		const NewSound = Instance.new("Sound")
+		NewSound.SoundId = SoundId
+		NewSound.Parent = SoundService
+		CachedSounds[SoundId] = NewSound
+	end
+
+	const Sound = CachedSounds[SoundId]
+	Sound.TimePosition = 0
 	Sound:Play()
-	Sound.Ended:Once(function()
-		Sound:Destroy()
-	end)
 end
 
-local function GetHoverSoundId(UIObject: GuiObject): string?
+const function GetHoverSoundId(UIObject: GuiObject): string?
 	const SoundId = UIObject:GetAttribute("HoverSoundId")
 	if typeof(SoundId) == "string" then
 		return SoundId
@@ -40,7 +48,7 @@ local function GetHoverSoundId(UIObject: GuiObject): string?
 	return EffectsSoundConfig.Hover
 end
 
-local function GetClickSoundId(UIObject: GuiObject): string?
+const function GetClickSoundId(UIObject: GuiObject): string?
 	const SoundId = UIObject:GetAttribute("ClickSoundId")
 	if typeof(SoundId) == "string" then
 		return SoundId
@@ -134,7 +142,7 @@ function UIEffects.CancelOpenEffectOnAncestorOpen(UIObject: GuiObject): ()
 	end
 end
 
-local function GetBobbingUpPosition(OriginalPosition: UDim2, OffsetY: number): UDim2
+const function GetBobbingUpPosition(OriginalPosition: UDim2, OffsetY: number): UDim2
 	return UDim2.new(
 		OriginalPosition.X.Scale,
 		OriginalPosition.X.Offset,
@@ -162,7 +170,7 @@ function UIEffects.ApplyBobbingEffect(UIObject: GuiObject): ()
 	local ActiveTween: Tween? = nil
 	local Cancelled = false
 
-	local function StopBobbing(): ()
+	const function StopBobbing(): ()
 		if Cancelled then
 			return
 		end
@@ -179,7 +187,7 @@ function UIEffects.ApplyBobbingEffect(UIObject: GuiObject): ()
 		BobbingConnections[UIObject] = nil
 	end
 
-	local function PlaySegment(GoalPosition: UDim2, GoalRotation: number, OnComplete: () -> ()): ()
+	const function PlaySegment(GoalPosition: UDim2, GoalRotation: number, OnComplete: () -> ()): ()
 		if Cancelled then
 			return
 		end
@@ -207,7 +215,7 @@ function UIEffects.ApplyBobbingEffect(UIObject: GuiObject): ()
 		end)
 	end
 
-	local function RunCycle(): ()
+	const function RunCycle(): ()
 		if Cancelled then
 			return
 		end

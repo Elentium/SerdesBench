@@ -20,23 +20,23 @@ const StaggerFrames = 2
 ------------------------------------------------------------
 -- VARIABLES
 ------------------------------------------------------------
-local FramePlaybackGenerations: { [GuiObject]: number } = {}
+const FramePlaybackGenerations: { [GuiObject]: number } = {}
 
 ------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
-local function GetPlaybackGeneration(Frame: GuiObject): number
+const function GetPlaybackGeneration(Frame: GuiObject): number
 	return FramePlaybackGenerations[Frame] or 0
 end
 
-local function CacheOriginalSize(GuiObject: GuiObject): UDim2
+const function CacheOriginalSize(GuiObject: GuiObject): UDim2
 	if not OriginalSizes[GuiObject] then
 		OriginalSizes[GuiObject] = GuiObject.Size
 	end
 	return OriginalSizes[GuiObject]
 end
 
-local function CompareBySnapshot(
+const function CompareBySnapshot(
 	Left: { AbsolutePosition: Vector2, Order: number },
 	Right: { AbsolutePosition: Vector2, Order: number }
 ): boolean
@@ -51,7 +51,7 @@ local function CompareBySnapshot(
 	return Left.Order < Right.Order
 end
 
-local function GetPriority(GuiObject: GuiObject): number?
+const function GetPriority(GuiObject: GuiObject): number?
 	const Priority = GuiObject:GetAttribute("Priority")
 	if typeof(Priority) == "number" then
 		return Priority
@@ -59,7 +59,9 @@ local function GetPriority(GuiObject: GuiObject): number?
 	return nil
 end
 
-local function GetTaggedDescendantSnapshots(Frame: GuiObject): { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } }
+const function GetTaggedDescendantSnapshots(
+	Frame: GuiObject
+): { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } }
 	local Snapshots: { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } } = {}
 	local Order = 0
 
@@ -77,7 +79,7 @@ local function GetTaggedDescendantSnapshots(Frame: GuiObject): { { Object: GuiOb
 	return Snapshots
 end
 
-local function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
+const function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
 	const Snapshots = GetTaggedDescendantSnapshots(Frame)
 
 	local WithPriority: { { Object: GuiObject, Priority: number, AbsolutePosition: Vector2, Order: number } } = {}
@@ -149,15 +151,18 @@ function AncestorOpenEffects.PrepareForFrameOpen(Frame: GuiObject): { GuiObject 
 	const TaggedDescendants = GetSortedTaggedDescendants(Frame)
 
 	for _, Descendant: GuiObject in TaggedDescendants do
+		if not Descendant.Visible then
+			continue
+		end
+
 		CacheOriginalSize(Descendant)
 		Descendant.Size = UDim2.fromScale(0, 0)
-		Descendant.Visible = true
 	end
 
 	return TaggedDescendants
 end
 
-local function WaitFrames(FrameCount: number): ()
+const function WaitFrames(FrameCount: number): ()
 	for _ = 1, FrameCount do
 		RunService.Heartbeat:Wait()
 	end
@@ -183,11 +188,7 @@ function AncestorOpenEffects.GetFrameOpenHalfDelay(TargetSize: UDim2): number
 	return EffectConfig.Info.Time / 2
 end
 
-function AncestorOpenEffects.PlayStaggered(
-	Frame: GuiObject,
-	TaggedDescendants: { GuiObject },
-	StartDelay: number?
-): ()
+function AncestorOpenEffects.PlayStaggered(Frame: GuiObject, TaggedDescendants: { GuiObject }, StartDelay: number?): ()
 	const PlaybackGeneration = GetPlaybackGeneration(Frame)
 
 	task.spawn(function()
@@ -210,7 +211,7 @@ function AncestorOpenEffects.PlayStaggered(
 				end
 			end
 
-			if not Descendant.Parent then
+			if not Descendant.Parent or not Descendant.Visible then
 				continue
 			end
 
