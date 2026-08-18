@@ -36,7 +36,7 @@ function TagsConfig.UI_HoverEffect(UIObject: GuiObject)
 end
 
 function TagsConfig.UI_FrameTogglerButton(UIObject: GuiButton)
-	const FrameToToggleObj: ObjectValue? = UIObject:FindFirstChild("FrameToToggle")
+	const FrameToToggleObj: ObjectValue? = UIObject:FindFirstChild("FrameToToggle") :: any
 	if not FrameToToggleObj or not FrameToToggleObj.Value then
 		return
 	end
@@ -47,10 +47,7 @@ function TagsConfig.UI_FrameTogglerButton(UIObject: GuiButton)
 	end
 	UIObject.MouseButton1Click:Connect(function()
 		const Division = UIObject:GetAttribute("Division")
-		FrameToggler.ToggleFrame(
-			FrameToToggle,
-			if typeof(Division) == "string" then Division else nil
-		)
+		FrameToggler.ToggleFrame(FrameToToggle, if typeof(Division) == "string" then Division else nil)
 	end)
 end
 
@@ -62,12 +59,11 @@ function TagsConfig.UI_BobbingEffect(UIObject: GuiObject)
 	UIEffects.ApplyBobbingEffect(UIObject)
 end
 
-function TagsConfig.UI_OpenEffectOnAncestorOpen(_UIObject: GuiObject): ()
-end
+function TagsConfig.UI_OpenEffectOnAncestorOpen(_UIObject: GuiObject): () end
 
 function TagsConfig.UI_FrameHitbox(Object: BasePart)
-	const FrameToToggleObj: ObjectValue? = Object:FindFirstChild("FrameToToggle")
-		or Object:FindFirstChild("FrameToOpen")
+	const FrameToToggleObj: ObjectValue? = Object:FindFirstChild("FrameToToggle") :: any
+		or Object:FindFirstChild("FrameToOpen") :: any
 	if not FrameToToggleObj or not FrameToToggleObj.Value then
 		return
 	end
@@ -80,7 +76,7 @@ function TagsConfig.UI_FrameHitbox(Object: BasePart)
 	const Division = Object:GetAttribute("Division")
 	OpenHitboxes[Object] = {
 		GuiObject = FrameToToggle,
-		Division = if typeof(Division) == "string" then Division else "Default",
+		Division = if type(Division) == "string" then Division else "Default",
 	}
 end
 

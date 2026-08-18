@@ -42,7 +42,7 @@ end
 
 const function GetHoverSoundId(UIObject: GuiObject): string?
 	const SoundId = UIObject:GetAttribute("HoverSoundId")
-	if typeof(SoundId) == "string" then
+	if type(SoundId) == "string" then
 		return SoundId
 	end
 	return EffectsSoundConfig.Hover
@@ -50,7 +50,7 @@ end
 
 const function GetClickSoundId(UIObject: GuiObject): string?
 	const SoundId = UIObject:GetAttribute("ClickSoundId")
-	if typeof(SoundId) == "string" then
+	if type(SoundId) == "string" then
 		return SoundId
 	end
 	return EffectsSoundConfig.Click

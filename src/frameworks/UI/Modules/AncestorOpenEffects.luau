@@ -53,7 +53,7 @@ end
 
 const function GetPriority(GuiObject: GuiObject): number?
 	const Priority = GuiObject:GetAttribute("Priority")
-	if typeof(Priority) == "number" then
+	if type(Priority) == "number" then
 		return Priority
 	end
 	return nil
@@ -62,7 +62,7 @@ end
 const function GetTaggedDescendantSnapshots(
 	Frame: GuiObject
 ): { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } }
-	local Snapshots: { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } } = {}
+	const Snapshots: { { Object: GuiObject, AbsolutePosition: Vector2, Order: number } } = {}
 	local Order = 0
 
 	for _, Instance: Instance in Frame:QueryDescendants(`.{TagName}`) do
@@ -99,12 +99,18 @@ const function GetSortedTaggedDescendants(Frame: GuiObject): { GuiObject }
 		end
 	end
 
-	table.sort(WithPriority, function(Left, Right): boolean
-		if Left.Priority ~= Right.Priority then
-			return Left.Priority < Right.Priority
+	table.sort(
+		WithPriority,
+		function(
+			Left: { AbsolutePosition: Vector2, Object: GuiObject, Order: number, Priority: number },
+			Right: { AbsolutePosition: Vector2, Object: GuiObject, Order: number, Priority: number }
+		): boolean
+			if Left.Priority ~= Right.Priority then
+				return Left.Priority < Right.Priority
+			end
+			return CompareBySnapshot(Left, Right)
 		end
-		return CompareBySnapshot(Left, Right)
-	end)
+	)
 
 	table.sort(WithoutPriority, CompareBySnapshot)
 

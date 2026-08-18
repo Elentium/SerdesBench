@@ -5,6 +5,7 @@ const AncestorOpenEffects = require("./AncestorOpenEffects")
 const OpenDivisions = require("../Data/OpenDivisions")
 const OpenFrames = require("../Data/OpenFrames")
 const Types = require("../Types")
+const PlayerGuiFrameResolver = require("./PlayerGuiFrameResolver")
 const UIEffects = require("./UIEffects")
 const FrameToggler = {}
 
@@ -17,6 +18,7 @@ type Node = Types.OpenFrameNode
 -- CONSTANTS
 ------------------------------------------------------------
 const DefaultDivision = "Default"
+const HideFrameChildName = "HideFrame"
 
 ------------------------------------------------------------
 -- VARIABLES
@@ -26,14 +28,14 @@ local GlobalDebounce = false
 ------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
-local function GetOrCreateNode(GuiObject: GuiObject, Division: string): Node
-	local ExistingNode = OpenFrames[GuiObject]
+const function GetOrCreateNode(GuiObject: GuiObject, Division: string): Node
+	const ExistingNode = OpenFrames[GuiObject]
 	if ExistingNode then
 		ExistingNode.Division = Division
 		return ExistingNode
 	end
 
-	local Node: Node = {
+	const Node: Node = {
 		OriginalSize = GuiObject.Size,
 		Division = Division,
 	}
@@ -41,17 +43,31 @@ local function GetOrCreateNode(GuiObject: GuiObject, Division: string): Node
 	return Node
 end
 
-local function ReleaseGlobalDebounce(): ()
+const function ReleaseGlobalDebounce(): ()
 	GlobalDebounce = false
 end
 
-local function ClearDivisionFrame(Division: string, GuiObject: GuiObject): ()
+const function ClearDivisionFrame(Division: string, GuiObject: GuiObject): ()
 	if OpenDivisions[Division] == GuiObject then
 		OpenDivisions[Division] = nil
 	end
 end
 
-local function WhenAllComplete(Count: number, OnComplete: () -> ()): () -> ()
+const function ApplyHideFrameChildren(GuiObject: GuiObject, Visible: boolean): ()
+	for _, Child in GuiObject:GetChildren() do
+		if Child.Name == HideFrameChildName and Child:IsA("ObjectValue") then
+			const Value = Child.Value
+			if Value and Value:IsA("GuiObject") then
+				const Resolved = PlayerGuiFrameResolver.ResolveFrame(Value)
+				if Resolved then
+					Resolved.Visible = Visible
+				end
+			end
+		end
+	end
+end
+
+const function WhenAllComplete(Count: number, OnComplete: () -> ()): () -> ()
 	local Remaining = Count
 	return function()
 		Remaining -= 1
@@ -61,7 +77,8 @@ local function WhenAllComplete(Count: number, OnComplete: () -> ()): () -> ()
 	end
 end
 
-local function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+const function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+	ApplyHideFrameChildren(GuiObject, true)
 	AncestorOpenEffects.ResetForFrameClose(GuiObject)
 
 	const Tween = UIEffects.ApplyFrameCloseEffect(GuiObject)
@@ -72,12 +89,13 @@ local function AnimateFrameClose(GuiObject: GuiObject, Node: Node, OnComplete: (
 	end)
 end
 
-local function AnimateFrameOpen(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
+const function AnimateFrameOpen(GuiObject: GuiObject, Node: Node, OnComplete: () -> ()): ()
 	GuiObject.Size = Node.OriginalSize
 	const TaggedDescendants = AncestorOpenEffects.PrepareForFrameOpen(GuiObject)
 
 	GuiObject.Size = UDim2.fromScale(0, 0)
 	GuiObject.Visible = true
+	ApplyHideFrameChildren(GuiObject, false)
 	const Tween = UIEffects.ApplyFrameOpenEffect(GuiObject, Node.OriginalSize)
 	const DescendantStartDelay = AncestorOpenEffects.GetFrameOpenHalfDelay(Node.OriginalSize)
 	AncestorOpenEffects.PlayStaggered(GuiObject, TaggedDescendants, DescendantStartDelay)

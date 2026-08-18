@@ -12,7 +12,7 @@ const PlayerGuiFrameResolver = {}
 ------------------------------------------------------------
 -- FUNCTIONS
 ------------------------------------------------------------
-local function FindByRelativePath(Root: Instance, RelativePath: string): Instance?
+const function FindByRelativePath(Root: Instance, RelativePath: string): Instance?
 	local Current: Instance = Root
 	for _, Segment in string.split(RelativePath, ".") do
 		const Child = Current:FindFirstChild(Segment)
