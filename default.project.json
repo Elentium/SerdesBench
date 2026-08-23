@@ -1,12 +1,16 @@
 {
-  "name": "MegaStudsUIPack",
-  "emitLegacyScripts": false,
+  "name": "SerdesBench",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
-      "Frameworks": {
-        "$path": "src/frameworks"
+      "SerdesBench": {
+        "$className": "Folder",
+        "Libs": {
+          "$path": "Libs"
+        },
+        "Bench": {
+          "$path": "Bench"
+        }
       }
     }
   }

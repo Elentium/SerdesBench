@@ -1,0 +1,59 @@
+__________________________________________________
+* RANKINGS (lower median μs is faster)
+______________________________________
+* TOP 5 OVERALL (all tests)
+** #1 VoidSentryUltimate — 0.80μs med avg (18 tests)
+** #2 Z — 0.80μs med avg (18 tests)
+** #3 BlazeSentry — 0.89μs med avg (18 tests)
+** #4 VoidSentry2 — 1.56μs med avg (18 tests)
+** #5 Squash — 1.75μs med avg (18 tests)
+______________________________________
+* TOP 5 OVERALL — RoundTrip only
+** #1 VoidSentryUltimate — 1.20μs med avg (6 tests)
+** #2 Z — 1.21μs med avg (6 tests)
+** #3 BlazeSentry — 1.34μs med avg (6 tests)
+** #4 VoidSentry2 — 2.37μs med avg (6 tests)
+** #5 Squash — 2.64μs med avg (6 tests)
+______________________________________
+* TOP 5 OVERALL — Serialize only
+** #1 VoidSentryUltimate — 0.54μs med avg (6 tests)
+** #2 Z — 0.58μs med avg (6 tests)
+** #3 BlazeSentry — 0.61μs med avg (6 tests)
+** #4 VoidSentry2 — 1.43μs med avg (6 tests)
+** #5 Squash — 1.57μs med avg (6 tests)
+______________________________________
+* TOP 5 OVERALL — Deserialize only
+** #1 Z — 0.61μs med avg (6 tests)
+** #2 VoidSentryUltimate — 0.66μs med avg (6 tests)
+** #3 BlazeSentry — 0.70μs med avg (6 tests)
+** #4 VoidSentry2 — 0.88μs med avg (6 tests)
+** #5 Squash — 1.04μs med avg (6 tests)
+______________________________________
+* TOP 5 — Array Types
+** #1 VoidSentryUltimate — 0.55μs med avg (9 tests)
+** #2 BlazeSentry — 0.59μs med avg (9 tests)
+** #3 Z — 0.60μs med avg (9 tests)
+** #4 VoidSentry2 — 1.04μs med avg (9 tests)
+** #5 Squash — 1.08μs med avg (9 tests)
+______________________________________
+* TOP 5 — Array Types (RoundTrip)
+** #1 VoidSentryUltimate — 0.82μs med avg (3 tests)
+** #2 BlazeSentry — 0.89μs med avg (3 tests)
+** #3 Z — 0.89μs med avg (3 tests)
+** #4 VoidSentry2 — 1.58μs med avg (3 tests)
+** #5 Squash — 1.63μs med avg (3 tests)
+______________________________________
+* TOP 5 — Map Types
+** #1 Z — 1.01μs med avg (9 tests)
+** #2 VoidSentryUltimate — 1.05μs med avg (9 tests)
+** #3 BlazeSentry — 1.18μs med avg (9 tests)
+** #4 VoidSentry2 — 2.08μs med avg (9 tests)
+** #5 Squash — 2.42μs med avg (9 tests)
+______________________________________
+* TOP 5 — Map Types (RoundTrip)
+** #1 Z — 1.52μs med avg (3 tests)
+** #2 VoidSentryUltimate — 1.58μs med avg (3 tests)
+** #3 BlazeSentry — 1.80μs med avg (3 tests)
+** #4 VoidSentry2 — 3.15μs med avg (3 tests)
+** #5 Squash — 3.66μs med avg (3 tests)
+__________________________________________________

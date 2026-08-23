@@ -1,5 +1,5 @@
 # Project place file
-/MegaStudsUIPack.rbxlx
+/SerdesBench.rbxlx
 
 # Roblox Studio lock files
 /*.rbxlx.lock
@@ -7,4 +7,4 @@
 
 sourcemap.json
 
-bgsave
+.DS_Store
