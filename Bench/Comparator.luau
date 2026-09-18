@@ -219,12 +219,12 @@ local function MakeSeraU8Schema(Count: number): any
 	return Sera.Schema(Params)
 end
 
-local function MakeVSU8Struct(Count: number): any
+local function MakeVSU8Schema(Count: number): any
 	local Tbl: { [string]: any } = {}
 	for i = 1, Count do
 		Tbl[MakeFieldName(i)] = VSTypes.U8
 	end
-	return VSTypes.Struct(Tbl)
+	return VoidSentryUltimate.Schema(Tbl)
 end
 
 local function MakeVS2U8Struct(Count: number): any
@@ -296,6 +296,25 @@ local function BenchVS(Name: string, Schema: any, Value: any, Iter: number)
 
 	Test("VoidSentryUltimate", `{Name} RoundTrip`, function()
 		Deserialize(Schema, Serialize(Schema, Value))
+	end, Iter)
+end
+
+-- Preferred Schema API (own Serialize/Deserialize), used for struct benches.
+local function BenchVSSchema(Name: string, Schema: any, Value: any, Iter: number)
+	local Serialize = Schema.Serialize
+	local Deserialize = Schema.Deserialize
+
+	Test("VoidSentryUltimate", `{Name} Serialize`, function()
+		Serialize(Value)
+	end, Iter)
+
+	local Buf = Serialize(Value)
+	Test("VoidSentryUltimate", `{Name} Deserialize`, function()
+		Deserialize(Buf)
+	end, Iter)
+
+	Test("VoidSentryUltimate", `{Name} RoundTrip`, function()
+		Deserialize(Serialize(Value))
 	end, Iter)
 end
 
@@ -565,7 +584,7 @@ local function Comparator(Log: boolean?, LogFullResults: boolean?, Iterations: n
 		local Value1 = MakeU8StructValue(1)
 		local Name = "Struct (1 field)"
 		BenchSera(Name, MakeSeraU8Schema(1), Value1, Iter)
-		BenchVS(Name, MakeVSU8Struct(1), Value1, Iter)
+		BenchVSSchema(Name, MakeVSU8Schema(1), Value1, Iter)
 		BenchVS2(Name, MakeVS2U8Struct(1), Value1, Iter)
 		BenchBS(Name, MakeBSU8Struct(1), Value1, Iter)
 		BenchZ(Name, MakeZU8Schema(1), Value1, Iter)
@@ -576,7 +595,7 @@ local function Comparator(Log: boolean?, LogFullResults: boolean?, Iterations: n
 		local Value10 = MakeU8StructValue(10)
 		local Name = "Struct (10 fields)"
 		BenchSera(Name, MakeSeraU8Schema(10), Value10, Iter)
-		BenchVS(Name, MakeVSU8Struct(10), Value10, Iter)
+		BenchVSSchema(Name, MakeVSU8Schema(10), Value10, Iter)
 		BenchVS2(Name, MakeVS2U8Struct(10), Value10, Iter)
 		BenchBS(Name, MakeBSU8Struct(10), Value10, Iter)
 		BenchZ(Name, MakeZU8Schema(10), Value10, Iter)
@@ -587,7 +606,7 @@ local function Comparator(Log: boolean?, LogFullResults: boolean?, Iterations: n
 		local Value100 = MakeU8StructValue(100)
 		local Name = "Struct (100 fields)"
 		BenchSera(Name, MakeSeraU8Schema(100), Value100, Iter)
-		BenchVS(Name, MakeVSU8Struct(100), Value100, Iter)
+		BenchVSSchema(Name, MakeVSU8Schema(100), Value100, Iter)
 		BenchVS2(Name, MakeVS2U8Struct(100), Value100, Iter)
 		BenchBS(Name, MakeBSU8Struct(100), Value100, Iter)
 		BenchZ(Name, MakeZU8Schema(100), Value100, Iter)
