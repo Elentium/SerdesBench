@@ -313,19 +313,19 @@ local function BenchSquash(Name: string, Serdes: any, Value: any, Iter: number)
 end
 
 local function BenchArrayAll(Name: string, Value: { number }, Iter: number)
-	BenchVS(Name, VSTypes.Array(VSTypes.U8), Value, Iter)
 	BenchVS2(Name, VS2Types.array(VS2Types.uint8), Value, Iter)
 	BenchBS(Name, BSTypes.array(BSTypes.uint8), Value, Iter)
 	-- u16 length prefix to align with VS Array / VS2 array
 	BenchZ(Name, Z.schema16({ Z.u8 }), Value, Iter)
+	BenchVS(Name, VSTypes.Array(VSTypes.U8), Value, Iter)
 	BenchSquash(Name, Squash.array(Squash.u8()), Value, Iter)
 end
 
 local function BenchMapAll(Name: string, Value: { [number]: number }, Iter: number)
-	BenchVS(Name, VSTypes.Map(VSTypes.U8, VSTypes.U8), Value, Iter)
 	BenchVS2(Name, VS2Types.map(VS2Types.uint8, VS2Types.uint8), Value, Iter)
 	BenchBS(Name, BSTypes.map(BSTypes.uint8, BSTypes.uint8), Value, Iter)
 	BenchZ(Name, Z.schema16({ [Z.u8] = Z.u8 }), Value, Iter)
+	BenchVS(Name, VSTypes.Map(VSTypes.U8, VSTypes.U8), Value, Iter)
 	BenchSquash(Name, Squash.map(Squash.u8(), Squash.u8()), Value, Iter)
 end
 
